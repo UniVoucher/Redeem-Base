@@ -314,4 +314,75 @@ input:focus {
 /* Override container max-width for legal pages */
 body:has(.legal-content) .container {
     max-width: 800px;
+}
+
+/* Success message spacing */
+.success strong {
+    display: block;
+    margin-bottom: 16px;
+}
+
+.success p {
+    margin-top: 8px;
+}
+
+/* Mobile styles */
+@media (max-width: 600px) {
+    .container {
+        padding: 24px;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
+    }
+
+    .header p {
+        font-size: 0.875rem;
+    }
+
+    label {
+        font-size: 0.875rem;
+    }
+
+    input {
+        font-size: 14px;
+        padding: 10px 14px;
+    }
+
+    .button {
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    .card-info {
+        padding: 16px;
+        font-size: 0.875rem;
+    }
+
+    .card-info h3 {
+        font-size: 1rem;
+    }
+
+    .message {
+        font-size: 0.875rem;
+        padding: 10px 14px;
+    }
+
+    .success strong {
+        font-size: 0.9375rem;
+        margin-bottom: 12px;
+    }
+
+    .success p {
+        font-size: 0.8125rem;
+        margin-top: 6px;
+    }
+
+    .tx-link {
+        font-size: 0.8125rem;
+    }
+
+    .footer {
+        font-size: 12px;
+    }
 } 

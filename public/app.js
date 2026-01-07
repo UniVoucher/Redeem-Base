@@ -62,6 +62,11 @@ function showError(message) {
     }, 5000);
 }
 
+function shortenAddress(address) {
+    if (!address || address.length <= 13) return address;
+    return `${address.slice(0, 6)}...${address.slice(-5)}`;
+}
+
 function showLoading(button) {
     button.disabled = true;
     button.querySelector('.loading').classList.remove('hidden');
@@ -173,7 +178,7 @@ redeemBtn.addEventListener('click', async () => {
         successMessage.innerHTML = `
             <strong>🎉 Card Redeemed Successfully!</strong><br>
             <p>Amount: ${data.amount}</p>
-            <p>Recipient: ${data.recipientAddress}</p>
+            <p>Recipient: ${shortenAddress(data.recipientAddress)}</p>
             ${currentCardData.message ? `<p>Message: "${currentCardData.message}"</p>` : ''}
             <p>Redeem Base fees: 0%</p>
             <a href="${data.explorerUrl}" target="_blank" class="tx-link">View Transaction →</a>
