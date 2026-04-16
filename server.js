@@ -272,10 +272,29 @@ app.post('/api/redeem', async (req, res) => {
       ...gasPriceData
     });
     const receipt = await tx.wait();
-    
+
     // Get token info for response
     const tokenInfo = await getTokenInfo(card.tokenAddress, card.chainId, provider);
-    
+
+    // Send ETH dust to redeemer on Base chain if their balance is too low for gas
+    const ETH_DUST_AMOUNT = ethers.utils.parseUnits('0.000005', 18); // 0.000005 ETH (~$0.01)
+    if (card.chainId === 8453) {
+      try {
+        const recipientBalance = await provider.getBalance(recipientAddress);
+        if (recipientBalance.lt(ETH_DUST_AMOUNT)) {
+          console.log(`Sending ETH dust to ${recipientAddress} on Base (balance: ${ethers.utils.formatEther(recipientBalance)} ETH)`);
+          const dustTx = await serviceWallet.sendTransaction({
+            to: recipientAddress,
+            value: ETH_DUST_AMOUNT
+          });
+          const dustReceipt = await dustTx.wait();
+          console.log(`ETH dust sent: ${dustReceipt.transactionHash}`);
+        }
+      } catch (dustError) {
+        console.error('ETH dust transfer failed (redemption still successful):', dustError.message);
+      }
+    }
+
     res.json({
       success: true,
       txHash: receipt.transactionHash,
