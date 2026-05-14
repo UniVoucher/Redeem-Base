@@ -276,22 +276,44 @@ app.post('/api/redeem', async (req, res) => {
     // Get token info for response
     const tokenInfo = await getTokenInfo(card.tokenAddress, card.chainId, provider);
 
-    // Send ETH dust to redeemer on Base chain if their balance is too low for gas
-    const ETH_DUST_AMOUNT = ethers.utils.parseUnits('0.000005', 18); // 0.000005 ETH (~$0.01)
-    if (card.chainId === 8453) {
+    // Send native dust to redeemer for eligible cards if their balance is too low for gas
+    const DUST_RULES = [
+      {
+        chainId: 8453,
+        tokenAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // USDC on Base
+        minTokenAmount: ethers.utils.parseUnits('1', 6),              // 1 USDC (6 decimals)
+        dustAmount: ethers.utils.parseUnits('0.000002', 18),          // 0.000002 ETH
+        label: 'ETH dust on Base'
+      },
+      {
+        chainId: 56,
+        tokenAddress: '0x55d398326f99059fF775485246999027B3197955', // USDT on BNB
+        minTokenAmount: ethers.utils.parseUnits('1', 18),             // 1 USDT (18 decimals)
+        dustAmount: ethers.utils.parseUnits('0.00001', 18),           // 0.00001 BNB
+        label: 'BNB dust on BNB Chain'
+      }
+    ];
+    const dustRule = DUST_RULES.find(r =>
+      card.chainId === r.chainId &&
+      card.tokenAddress.toLowerCase() === r.tokenAddress.toLowerCase() &&
+      ethers.BigNumber.from(card.tokenAmount).gte(r.minTokenAmount)
+    );
+    if (dustRule) {
       try {
-        const recipientBalance = await provider.getBalance(recipientAddress);
-        if (recipientBalance.lt(ETH_DUST_AMOUNT)) {
-          console.log(`Sending ETH dust to ${recipientAddress} on Base (balance: ${ethers.utils.formatEther(recipientBalance)} ETH)`);
-          const dustTx = await serviceWallet.sendTransaction({
+        const dustProvider = getProvider(dustRule.chainId);
+        const dustWallet = new ethers.Wallet(SERVICE_PRIVATE_KEY, dustProvider);
+        const recipientBalance = await dustProvider.getBalance(recipientAddress);
+        if (recipientBalance.lt(dustRule.dustAmount)) {
+          console.log(`Sending ${dustRule.label} to ${recipientAddress} (balance: ${ethers.utils.formatEther(recipientBalance)})`);
+          const dustTx = await dustWallet.sendTransaction({
             to: recipientAddress,
-            value: ETH_DUST_AMOUNT
+            value: dustRule.dustAmount
           });
           const dustReceipt = await dustTx.wait();
-          console.log(`ETH dust sent: ${dustReceipt.transactionHash}`);
+          console.log(`${dustRule.label} sent: ${dustReceipt.transactionHash}`);
         }
       } catch (dustError) {
-        console.error('ETH dust transfer failed (redemption still successful):', dustError.message);
+        console.error(`${dustRule.label} transfer failed (redemption still successful):`, dustError.message);
       }
     }
 
