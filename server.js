@@ -305,9 +305,12 @@ app.post('/api/redeem', async (req, res) => {
         const recipientBalance = await dustProvider.getBalance(recipientAddress);
         if (recipientBalance.lt(dustRule.dustAmount)) {
           console.log(`Sending ${dustRule.label} to ${recipientAddress} (balance: ${ethers.utils.formatEther(recipientBalance)})`);
+          const dustGasPrice = await dustProvider.getGasPrice();
           const dustTx = await dustWallet.sendTransaction({
             to: recipientAddress,
-            value: dustRule.dustAmount
+            value: dustRule.dustAmount,
+            gasLimit: 21000,
+            gasPrice: dustGasPrice
           });
           const dustReceipt = await dustTx.wait();
           console.log(`${dustRule.label} sent: ${dustReceipt.transactionHash}`);
